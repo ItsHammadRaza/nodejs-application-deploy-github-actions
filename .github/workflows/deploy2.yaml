@@ -32,10 +32,10 @@ jobs:
               raise SystemExit(f"FAILED: {type(error).__name__}: {error}")
           PY
 
-      - name: Deploy Via SSH
+        - name: Deploy Via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SSH_HOST }}
+          host: 54.82.226.164
           username: ec2-user
           key: ${{ secrets.SSH_KEY }}
           script: |
