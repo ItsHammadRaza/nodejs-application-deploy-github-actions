@@ -1,0 +1,45 @@
+name: Deploy NodeJS Application
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Test SSH connectivity
+        env:
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+        run: |
+          python - <<'PY'
+          import os
+          import socket
+
+          host = os.environ["SSH_HOST"]
+          if not host or host != host.strip():
+              raise SystemExit("SSH_HOST is empty or has surrounding whitespace")
+
+          try:
+              with socket.create_connection((host, 22), timeout=15):
+                  print("SUCCESS: GitHub runner reached port 22")
+          except OSError as error:
+              raise SystemExit(f"FAILED: {type(error).__name__}: {error}")
+          PY
+
+      - name: Deploy Via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ec2-user
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd /home/ec2-user/nodejs-application-deploy-github-actions
+            git pull --ff-only origin main
+            docker compose up -d --build
